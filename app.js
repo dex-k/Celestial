@@ -1,6 +1,6 @@
 //All function take input and give output in SI units.
 //Scale is roughly 
-// --> 1 pixel = 1 km
+// --> 1 pixel = 10 km
 // --> 1 tick = 1 Ms (mega-second)
 
 const canvas = document.getElementById('space');
@@ -9,16 +9,77 @@ let center = {
     x: canvas.width / 2,
     y: canvas.height / 2
 };
-const celestialConstant = 1 //multiplicative constant to edit the value of G to be more usable.
+const celestialConstant = 1e-6 //multiplicative constant to edit the value of G to be more usable.
 const G = 6.6740e-11 * celestialConstant;
-const tickrate = 1e3; //ticks per second
+let tickrate = 1e3; //ticks per second
 const tickTime = 1000 / tickrate; //milliseconds per tick
 const wallBounce = false //add later to make it bounce like the dvd logo lmao
 
+const system = {
+    paused: false,
+    colours: false,
+    help: function() { //console log a guide
+        //how to add, remove planets
+        //how to pause/resume
+        //how to view planet info
+        //how to change tickrate
+    },
+    pause: function() { //pause the system
+        this.paused = true;
+        console.log("System paused")
+    },
+    resume: function() { //resume the system
+        this.paused = false;
+        console.log("System resumed")
+    },
+    toggleColours: function() {
+        //todo
+        //add colours based on mass
+    },
+    addPlanet: function(name, radius, mass, colour, pos, vel) {
+        let newPlanet = new Planet(name, radius, mass, colour, pos, vel);
+        planets.push(newPlanet)
+    },
+    removePlanet: function(name) {
+        //search through planets array, if matching name is found then remove, else error
+    },
+    resize: function(args) { //resize viewport to either pixel amount or percentage of screen
+        //check if last char is % or x (from px) then parseint value and change
+        let pixels;
+        if (true/*percent*/) {
+            let percent = parseInt(args),
+                screenHeight = window.innerHeight,
+                screenWidth = window.innerWidth;
+            if (screenHeight < screenWidth) {
+                pixels = screenHeight * percent / 100;
+            } else {
+                pixels = screenWidth * percent / 100
+            }
+        } else if (false/*px*/) {
+
+        } else { //error
+            console.log("Unrecognised input to system.resize().");
+            return;
+        }
+        canvas.width = pixels;
+        canvas.height = pixels;
+
+        center = {
+            x: canvas.width / 2,
+            y: canvas.height / 2
+        };
+    },
+    info: function(planet) { //console log the info for a particular planet
+        //
+    },
+    tickrate: function(int) { //change tickrate to specified integer
+        tickrate = int;
+    }
+}
 
 //pos and vel are objects with x and y properties, vel in m/s
 //radius in m, mass in kg
-var Planet = function(name, radius, mass, colour, pos, vel) {
+const Planet = function(name, radius, mass, colour, pos, vel) {
     const planet = this;
     this.name = name;
     this.radius = radius;
@@ -33,30 +94,15 @@ var Planet = function(name, radius, mass, colour, pos, vel) {
         ctx.fill();
         ctx.closePath();
     };
-    // this.ds = function(){ //update position according to velocity [ds => delta s(displacement)]
-    //     planet.pos.x += planet.vel.x;
-    //     planet.pos.y += planet.vel.y;
-    //     console.log("moving", planet.name, "at", planet.pos.x, planet.pos.y, "with vel:", planet.vel.x, planet.vel.y)
-    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    //     ctx.beginPath();
-    //     ctx.arc(center.x + planet.pos.x, center.y + planet.pos.y, planet.radius, 0, Math.PI*2, false);
-    //     ctx.fillStyle = planet.colour;
-    //     ctx.fill();
-    //     ctx.closePath();
-    // };
-    // this.dv = function(){ //update velocity according to gravity force of all planets
-    //     //for each other planet - make sure to exclude itsself
-    //     // --> Calculate
-    // };
 };
 
 
-var planets = [
-    new Planet("test1", 20, 6e18, "white", {x:0, y:0}, {x:0, y:0}),
-    new Planet("test2", 10, 2, "white", {x:100, y:100}, {x:0, y:0}),
+let planets = [
+    new Planet("test1", 6.371, 5.927e24, "white", {x:0, y:0}, {x:0, y:0}),
+    new Planet("test2", 1.737, 7.348e22, "white", {x:100, y:100}, {x:100, y:0}),
 ] //global array of existing planets, can add or remove at any time
 
-var operations = {
+const operations = {
     displacement: function(planet1, planet2) { //displacement FROM planet1 TO planet 2, returned as object with x, y, magnitude, angle properties in METRES and RADIANS
         let x = planet2.pos.x - planet1.pos.x,
             y = planet2.pos.y - planet1.pos.y,
@@ -78,19 +124,13 @@ var operations = {
     }
 }
 
-//init
-var init = function(){
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-
 var letThereBeLight = function(){ //create all planets
     for (let i = 0; i < planets.length; i++){
         planets[i].create();
     }
 }
-
-var nyoom = function(){ //move every planet
+//function for moving planets
+var nyoom = function(){ 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
     for (let i = 0; i < planets.length; i++){
@@ -108,11 +148,6 @@ var nyoom = function(){ //move every planet
 // - Add collision detection.
 //    * on collision, add radius and mass to form 1 body
 
-//
-// !!!!!
-// POBLEM WITH HARDERDADDY FUNCTION
-// !!!!!
-//
 var harderDaddy = function(){ //force of gravity pulling on each planet
     for (let i = 0; i < planets.length; i++){
         let p1 = planets[i];
@@ -123,7 +158,9 @@ var harderDaddy = function(){ //force of gravity pulling on each planet
             let force = operations.gravitationalForce(p1, p2);
             let a = force / p1.mass; //acceleration
             let t = tickTime / 100; //time change is taking place over
+            //for some reason adding a minus fixes it, not sure why.
             let ax = -a * Math.cos(displacement.angle);
+            //adding a minus on y instead of x reverses direction of rotation? idk why
             let ay = a * Math.sin(displacement.angle);
             let vx = p1.vel.x * t + 0.5 * ax * t**2;
             let vy = p1.vel.y * t + 0.5 * ay * t**2;
@@ -136,12 +173,23 @@ var harderDaddy = function(){ //force of gravity pulling on each planet
     }
 }
 
+//init
+var init = function(){
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+}
+
 var main = function(){
     letThereBeLight();
     let tick = setInterval(function() {
+        if (!system.paused){
         nyoom();
         harderDaddy();
+        }
     },tickTime)
 
 };
+
+init();
 main();
