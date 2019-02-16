@@ -12,7 +12,7 @@ let center = {
 const celestialConstant = 1e-6 //multiplicative constant to edit the value of G to be more usable.
 const G = 6.6740e-11 * celestialConstant;
 let tickrate = 1e3; //ticks per second
-const tickTime = 1000 / tickrate; //milliseconds per tick
+const tickTime = 2000 / tickrate; //milliseconds per tick
 const wallBounce = false //add later to make it bounce like the dvd logo lmao
 
 const system = {
@@ -39,6 +39,7 @@ const system = {
     addPlanet: function(name, radius, mass, colour, pos, vel) {
         let newPlanet = new Planet(name, radius, mass, colour, pos, vel);
         planets.push(newPlanet)
+        planets.slice(-1)[0].create() //access last element of planets array and create it. hopefully the last element is the one created just now.
     },
     removePlanet: function(name) {
         //search through planets array, if matching name is found then remove, else error
@@ -74,6 +75,9 @@ const system = {
     },
     tickrate: function(int) { //change tickrate to specified integer
         tickrate = int;
+    },
+    suicide: function() {
+        planets = [];
     }
 }
 
@@ -98,8 +102,9 @@ const Planet = function(name, radius, mass, colour, pos, vel) {
 
 
 let planets = [
-    new Planet("test1", 6.371, 5.927e24, "white", {x:0, y:0}, {x:0, y:0}),
-    new Planet("test2", 1.737, 7.348e22, "white", {x:100, y:100}, {x:100, y:0}),
+    new Planet("earth", 6.371, 5.927e24, "white", {x:0, y:0}, {x:0, y:0}),
+    new Planet("moon", 1.737, 7.348e22, "white", {x:100, y:100}, {x:0, y:-150}),
+    new Planet("meen", 1.737, 7.348e22, "white", {x:-100, y:-100}, {x:0, y:100}),
 ] //global array of existing planets, can add or remove at any time
 
 const operations = {
@@ -132,16 +137,16 @@ var letThereBeLight = function(){ //create all planets
 //function for moving planets
 var nyoom = function(){ 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.beginPath();
     for (let i = 0; i < planets.length; i++){
+        ctx.beginPath();
         let planet = planets[i];
         planet.pos.x += planet.vel.x;
         planet.pos.y += planet.vel.y;
         ctx.fillStyle = planet.colour;
         ctx.arc(center.x + planet.pos.x, center.y - planet.pos.y, planet.radius, 0, Math.PI*2, false);
+        ctx.closePath();
         ctx.fill();
     }
-    ctx.closePath();
 }
 //TODO see if i can use ctx.fillArc() ?
 //TODO
@@ -184,8 +189,8 @@ var main = function(){
     letThereBeLight();
     let tick = setInterval(function() {
         if (!system.paused){
-        nyoom();
-        harderDaddy();
+            nyoom();
+            harderDaddy();
         }
     },tickTime)
 
