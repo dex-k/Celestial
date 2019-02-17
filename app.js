@@ -11,9 +11,10 @@ let center = {
 };
 const celestialConstant = 1e-16 //multiplicative constant to edit the value of G to be more usable.
 const G = 6.6740e-11 * celestialConstant;
-let tickrate = 1e1; //ticks per second
-const tickTime = _ => 1000 / tickrate; //milliseconds per tick, function to return
-let forceTime = tickTime() / 100;
+let tickrate = .1; //ticks per second
+// let tickrate2 = 0;
+// const tickTime = _ => 1000 / tickrate; //milliseconds per tick, function to return
+let forceTime = 2;
 const wallBounce = false //add later to make it bounce like the dvd logo lmao
 
 const system = {
@@ -103,8 +104,8 @@ const Planet = function(name, radius, mass, colour, pos, vel) {
 
 
 let planets = [
-    new Planet("earth", 12, 6e24, "white", {x:0, y:0}, {x:0, y:0}),
-    new Planet("moon", 3, 7e22, "white", {x:30, y:0}, {x:0, y:5e-2})
+    new Planet("earth", 12, 6e25, "white", {x:0, y:0}, {x:0, y:0}),
+    new Planet("moon", 3, 7e22, "white", {x:30, y:0}, {x:0, y:2.2e-1})
 ] //global array of existing planets, can add or remove at any time
 
 // let planets = [
@@ -169,7 +170,7 @@ const harderDaddy = function(){ //force of gravity pulling on each planet
             let displacement = operations.displacement(p1, p2);
             let force = operations.gravitationalForce(p2, p1);
             let a = force / p1.mass; //acceleration
-            let t = tickTime() / 100; //time change is taking place over
+            let t = forceTime; //time change is taking place over
             let ax = a * Math.cos(displacement.angle);
             // console.log(p1.name, "->", p2.name, displacement.angle / Math.PI * 180)
             let ay = a * Math.sin(displacement.angle);
@@ -202,7 +203,7 @@ var init = function(){
 var main = function(){
     letThereBeLight();
     // tick();
-    setInterval(tick, tickTime)
+    setInterval(tick, tickrate)
 
 };
 
