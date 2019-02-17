@@ -9,17 +9,15 @@ let center = {
     x: canvas.width / 2,
     y: canvas.height / 2
 };
-const celestialConstant = 1e-16 //multiplicative constant to edit the value of G to be more usable.
+const celestialConstant = 2e-12 //multiplicative constant to edit the value of G to be more usable.
 const G = 6.6740e-11 * celestialConstant;
-let tickrate = .1; //ticks per second
-// let tickrate2 = 0;
-// const tickTime = _ => 1000 / tickrate; //milliseconds per tick, function to return
-let forceTime = 2;
-const wallBounce = false //add later to make it bounce like the dvd logo lmao
+let tickrate = 16;
+let forceTime = 1e-3;
 
 const system = {
     paused: false,
     colours: false,
+    wallBounce: false, //add later to make it bounce like the dvd logo lmao
     help: function() { //console log a guide
         //how to add, remove planets
         //how to pause/resume
@@ -105,7 +103,7 @@ const Planet = function(name, radius, mass, colour, pos, vel) {
 
 let planets = [
     new Planet("earth", 12, 6e25, "white", {x:0, y:0}, {x:0, y:0}),
-    new Planet("moon", 3, 7e22, "white", {x:30, y:0}, {x:0, y:2.2e-1})
+    new Planet("moon", 3, 7e22, "white", {x:90, y:0}, {x:0, y:3.5e-1})
 ] //global array of existing planets, can add or remove at any time
 
 // let planets = [
@@ -189,6 +187,7 @@ const tick = function() {
     if (!system.paused){
         nyoom();
         harderDaddy();
+        window.setTimeout(tick, tickrate) // better than setinterval because allows for changing of interval
     }
     // requestAnimationFrame(tick)
 }
@@ -202,8 +201,8 @@ var init = function(){
 
 var main = function(){
     letThereBeLight();
-    // tick();
-    setInterval(tick, tickrate)
+    tick();
+    // setInterval(tick, tickrate)
 
 };
 
