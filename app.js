@@ -9,10 +9,11 @@ let center = {
     x: canvas.width / 2,
     y: canvas.height / 2
 };
-const celestialConstant = 1e-6 //multiplicative constant to edit the value of G to be more usable.
+const celestialConstant = 1e-16 //multiplicative constant to edit the value of G to be more usable.
 const G = 6.6740e-11 * celestialConstant;
-let tickrate = 1e3; //ticks per second
-const tickTime = 2000 / tickrate; //milliseconds per tick
+let tickrate = 1e1; //ticks per second
+const tickTime = _ => 1000 / tickrate; //milliseconds per tick, function to return
+let forceTime = tickTime() / 100;
 const wallBounce = false //add later to make it bounce like the dvd logo lmao
 
 const system = {
@@ -102,17 +103,23 @@ const Planet = function(name, radius, mass, colour, pos, vel) {
 
 
 let planets = [
-    new Planet("earth", 6.371, 5.927e24, "white", {x:0, y:0}, {x:0, y:0}),
-    new Planet("moon", 1.737, 7.348e22, "white", {x:100, y:100}, {x:0, y:-150}),
-    new Planet("meen", 1.737, 7.348e22, "white", {x:-100, y:-100}, {x:0, y:100}),
+    new Planet("earth", 12, 6e24, "white", {x:0, y:0}, {x:0, y:0}),
+    new Planet("moon", 3, 7e22, "white", {x:30, y:0}, {x:0, y:5e-2})
 ] //global array of existing planets, can add or remove at any time
+
+// let planets = [
+//     new Planet("1", 5, 1e1, "magenta", {x:0, y:200}, {x:-0, y:0}),
+//     new Planet("2", 5, 1e1, "lime", {x:-200, y:0}, {x:0, y:-0}),
+//     new Planet("3", 5, 1e1, "yellow", {x:0, y:-200}, {x:0, y:0}),
+//     new Planet("4", 5, 1e1, "cyan", {x:200, y:0}, {x:0, y:0}),
+// ]
 
 const operations = {
     displacement: function(planet1, planet2) { //displacement FROM planet1 TO planet 2, returned as object with x, y, magnitude, angle properties in METRES and RADIANS
         let x = planet2.pos.x - planet1.pos.x,
             y = planet2.pos.y - planet1.pos.y,
             magnitude = Math.sqrt(x*x + y*y),
-            angle = Math.atan2(x, y);
+            angle = Math.atan2(y, x); //fucking hell atan2 needs y first then x (i mean obviously)
         return {
             x: x, 
             y: y, 
@@ -135,7 +142,7 @@ var letThereBeLight = function(){ //create all planets
     }
 }
 //function for moving planets
-var nyoom = function(){ 
+const nyoom = function(){ 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < planets.length; i++){
         ctx.beginPath();
@@ -153,29 +160,36 @@ var nyoom = function(){
 // - Add collision detection.
 //    * on collision, add radius and mass to form 1 body
 
-var harderDaddy = function(){ //force of gravity pulling on each planet
+const harderDaddy = function(){ //force of gravity pulling on each planet
     for (let i = 0; i < planets.length; i++){
         let p1 = planets[i];
         for (let j = 0; j < planets.length; j++){
             if (planets[j] == p1) continue;
             let p2 = planets[j];
             let displacement = operations.displacement(p1, p2);
-            let force = operations.gravitationalForce(p1, p2);
+            let force = operations.gravitationalForce(p2, p1);
             let a = force / p1.mass; //acceleration
-            let t = tickTime / 100; //time change is taking place over
-            //for some reason adding a minus fixes it, not sure why.
-            let ax = -a * Math.cos(displacement.angle);
-            //adding a minus on y instead of x reverses direction of rotation? idk why
+            let t = tickTime() / 100; //time change is taking place over
+            let ax = a * Math.cos(displacement.angle);
+            // console.log(p1.name, "->", p2.name, displacement.angle / Math.PI * 180)
             let ay = a * Math.sin(displacement.angle);
-            let vx = p1.vel.x * t + 0.5 * ax * t**2;
-            let vy = p1.vel.y * t + 0.5 * ay * t**2;
-            p1.vel.x = vx;
-            p1.vel.y = vy;
+            p1.vel.x += ax * t;
+            p1.vel.y += ay * t;
             // console.log(`displacement ${p1.name}, ${p2.name}: `, displacement);
             // console.log(`accelerated ${p1.name}: mag ${a}, comp ${ax}, ${ay}`)
             // console.log(`${p1.name} acted upon by ${p2.name} with magnitude ${force}`)
         }
     }
+}
+
+
+
+const tick = function() {
+    if (!system.paused){
+        nyoom();
+        harderDaddy();
+    }
+    // requestAnimationFrame(tick)
 }
 
 //init
@@ -187,12 +201,8 @@ var init = function(){
 
 var main = function(){
     letThereBeLight();
-    let tick = setInterval(function() {
-        if (!system.paused){
-            nyoom();
-            harderDaddy();
-        }
-    },tickTime)
+    // tick();
+    setInterval(tick, tickTime)
 
 };
 
