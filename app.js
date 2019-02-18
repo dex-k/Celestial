@@ -9,12 +9,17 @@ let center = {
     x: canvas.width / 2,
     y: canvas.height / 2
 };
-// const celestialConstant = 1/*2e-12*/ //multiplicative constant to edit the value of G to be more usable.
+
+// Preliminary code for normalising the distances to the masses etc. 
+// to better reflect the scale of the universe while taking into
+// account the size of the screen. Using some form of logarithmic 
+// for displaying all distances, but making calculations with unscaled distances.
 const normal = 6.371e6
 const normalConstant = normal/Math.log10(normal) //constant which will multiply to a scale of making 'normal' = 10px
+
 const G = 6.6740e-11 /* celestialConstant;*/
-let tickrate = 16;
-let forceTime = 6e-5 /*1e-3/0.06*/; //seconds over 
+let tickrate = 16; //milliseconds between each update. 60fps ~= 16.666.. ms per frame
+let forceTime = 6e-5; //seconds over which acceleration is calculated
 
 const sys = {
     paused: false,
@@ -76,6 +81,7 @@ const sys = {
         //
     },
     tickrate: function(int) { //change tickrate to specified integer
+        if (int === undefined) return tickrate;
         tickrate = int;
     },
     suicide: function() {
@@ -97,21 +103,21 @@ const Planet = function(name, radius, mass, colour, pos, vel) {
         ctx.beginPath();
         ctx.arc(center.x + planet.pos.x, center.y - planet.pos.y, planet.radius, 0, 2 * Math.PI, false);
         ctx.fillStyle = planet.colour;
-        ctx.fill();
+        ctx.stroke();
         ctx.closePath();
     };
 };
 
 
-let planets = [ //earth moon type system
-    new Planet("earth", 10, 5e17, "white", {x:0, y:0}, {x:0, y:0}),
-    new Planet("moon", 3, 7e9, "white", {x:190, y:0}, {x:0, y:1.4})
-]
-
-// let planets = [ //two body simulatneous orbit
-//     new Planet("no", 10, 6e16, "white", {x:300, y:100}, {x:-2e-2, y:-2.5e-1}),
-//     new Planet("homo", 10, 6e16, "white", {x:-300, y:-100}, {x:2e-2, y:2.5e-1}),
+// let planets = [ //earth moon type system
+//     new Planet("earth", 10, 5e17, "white", {x:0, y:0}, {x:0, y:0}),
+//     new Planet("moon", 3, 7e9, "white", {x:190, y:0}, {x:0, y:1.4})
 // ]
+
+let planets = [ //two body simulatneous orbit
+    new Planet("no", 10, 6e16, "white", {x:300, y:100}, {x:-2e-2, y:-2.5e-1}),
+    new Planet("homo", 10, 6e16, "white", {x:-300, y:-100}, {x:2e-2, y:2.5e-1}),
+]
 
 const ops = {
     displacement: function(planet1, planet2) { //displacement FROM planet1 TO planet 2, returned as object with x, y, magnitude, angle properties in METRES and RADIANS
@@ -153,16 +159,33 @@ const nyoom = function(){
         let planet = planets[i];
         planet.pos.x += planet.vel.x;
         planet.pos.y += planet.vel.y;
-        ctx.fillStyle = planet.colour;
+        ctx.strokeStyle = planet.colour;
         ctx.arc(center.x + planet.pos.x, center.y - planet.pos.y, planet.radius, 0, Math.PI*2, false);
         ctx.closePath();
-        ctx.fill();
+        ctx.stroke();
     }
 }
-//TODO see if i can use ctx.fillArc() ?
 //TODO
 // - Add collision detection.
 //    * on collision, add radius and mass to form 1 body
+
+const collision = function() {
+    for (let i = 0; i < planets.length; i++){
+        let p1 = planets[i];
+        let xFullDisplacement = Math.abs(p1.pos.x) + p1.radius;
+        let yFullDisplacement = Math.abs(p1.pos.y) + p1.radius;
+
+        if ( xFullDisplacement >= canvas.width / 2 ) { //if planet touches vert walls
+            p1.vel.x *= -1;
+        } else if ( yFullDisplacement >= canvas.height / 2 ) { //if planet touches horizontal walls
+            p1.vel.y *= -1;
+        }
+        for (let j = 0; j < planets.length; j++){
+            if (planets[j] == p1) continue; //skip if p1 = p2, more robust check than i===j in case [planets] is changed
+            let p2 = planets[j];
+       }
+    }
+}
 
 const harderDaddy = function(){ //force of gravity pulling on each planet
     for (let i = 0; i < planets.length; i++){
@@ -175,10 +198,10 @@ const harderDaddy = function(){ //force of gravity pulling on each planet
             let a = force / p1.mass; //acceleration
             let t = forceTime; //time change is taking place over
             let ax = a * Math.cos(displacement.angle);
-            // console.log(p1.name, "->", p2.name, displacement.angle / Math.PI * 180)
             let ay = a * Math.sin(displacement.angle);
             p1.vel.x += ax * t;
             p1.vel.y += ay * t;
+            // console.log(p1.name, "->", p2.name, displacement.angle / Math.PI * 180)
             // console.log(`displacement ${p1.name}, ${p2.name}: `, displacement);
             // console.log(`accelerated ${p1.name}: mag ${a}, comp ${ax}, ${ay}`)
             // console.log(`${p1.name} acted upon by ${p2.name} with magnitude ${force}`)
@@ -191,12 +214,12 @@ const harderDaddy = function(){ //force of gravity pulling on each planet
 const tick = function() {
     if (!sys.paused){
         nyoom();
+        collision();
         harderDaddy();
         window.setTimeout(tick, tickrate) // better than setinterval because allows for changing of interval
     } else {
         window.setTimeout(tick, tickrate)
     }
-    // requestAnimationFrame(tick)
 }
 
 //init
@@ -207,10 +230,7 @@ var init = function(){
 }
 
 var main = function(){
-    letThereBeLight();
     tick();
-    // setInterval(tick, tickrate)
-
 };
 
 init();
