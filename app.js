@@ -9,10 +9,12 @@ let center = {
     x: canvas.width / 2,
     y: canvas.height / 2
 };
-const celestialConstant = 1/*2e-12*/ //multiplicative constant to edit the value of G to be more usable.
-const G = 6.6740e-11 * celestialConstant;
+// const celestialConstant = 1/*2e-12*/ //multiplicative constant to edit the value of G to be more usable.
+const normal = 6.371e6
+const normalConstant = normal/Math.log10(normal) //constant which will multiply to a scale of making 'normal' = 10px
+const G = 6.6740e-11 /* celestialConstant;*/
 let tickrate = 16;
-let forceTime = 6e-5 /*1e-3/0.06*/;
+let forceTime = 6e-5 /*1e-3/0.06*/; //seconds over 
 
 const sys = {
     paused: false,
@@ -101,21 +103,22 @@ const Planet = function(name, radius, mass, colour, pos, vel) {
 };
 
 
-// let planets = [ //earth moon type system
-//     new Planet("earth", 12, 5e15, "white", {x:0, y:0}, {x:0, y:0}),
-//     new Planet("moon", 3, 7e9, "white", {x:190, y:0}, {x:0, y:5.5})
-// ]
-
-let planets = [ //two body simulatneous orbit
-    new Planet("no", 10, 6e16, "white", {x:300, y:100}, {x:-2e-2, y:-2.5e-1}),
-    new Planet("homo", 10, 6e16, "white", {x:-300, y:-100}, {x:2e-2, y:2.5e-1}),
+let planets = [ //earth moon type system
+    new Planet("earth", 10, 5e17, "white", {x:0, y:0}, {x:0, y:0}),
+    new Planet("moon", 3, 7e9, "white", {x:190, y:0}, {x:0, y:1.4})
 ]
+
+// let planets = [ //two body simulatneous orbit
+//     new Planet("no", 10, 6e16, "white", {x:300, y:100}, {x:-2e-2, y:-2.5e-1}),
+//     new Planet("homo", 10, 6e16, "white", {x:-300, y:-100}, {x:2e-2, y:2.5e-1}),
+// ]
 
 const ops = {
     displacement: function(planet1, planet2) { //displacement FROM planet1 TO planet 2, returned as object with x, y, magnitude, angle properties in METRES and RADIANS
         let x = planet2.pos.x - planet1.pos.x,
             y = planet2.pos.y - planet1.pos.y,
-            magnitude = Math.sqrt(x*x + y*y),
+            magnitude = Math.sqrt(x*x + y*y);
+            // magnitude = ops.normalise( Math.sqrt(x*x + y*y) ), //see normalise funtion. Lets F(grav) act as if distances were normal
             angle = Math.atan2(y, x); //fucking hell atan2 needs y first then x (i mean obviously)
         return {
             x: x, 
@@ -130,6 +133,10 @@ const ops = {
             m2 = planet2.mass,
             g = ( G * m1 * m2 )/( r**2 );
         return g;
+    },
+    normalise: function(int) { //scales distances so force acts as if distances were bigger, normalised so that "vanilla" system reflects the mood/earth syste
+        let normalInt = normalConstant * Math.log10(int);
+        return normalInt;
     }
 }
 
@@ -186,6 +193,8 @@ const tick = function() {
         nyoom();
         harderDaddy();
         window.setTimeout(tick, tickrate) // better than setinterval because allows for changing of interval
+    } else {
+        window.setTimeout(tick, tickrate)
     }
     // requestAnimationFrame(tick)
 }
