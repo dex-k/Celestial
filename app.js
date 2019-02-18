@@ -9,7 +9,7 @@ let center = {
     x: canvas.width / 2,
     y: canvas.height / 2
 };
-const celestialConstant = 2e-12 //multiplicative constant to edit the value of G to be more usable.
+const celestialConstant = 1/*2e-12*/ //multiplicative constant to edit the value of G to be more usable.
 const G = 6.6740e-11 * celestialConstant;
 let tickrate = 16;
 let forceTime = 1e-3;
@@ -101,17 +101,15 @@ const Planet = function(name, radius, mass, colour, pos, vel) {
 };
 
 
-let planets = [
-    new Planet("earth", 12, 6e25, "white", {x:0, y:0}, {x:0, y:0}),
-    new Planet("moon", 3, 7e22, "white", {x:90, y:0}, {x:0, y:3.5e-1})
-] //global array of existing planets, can add or remove at any time
-
-// let planets = [
-//     new Planet("1", 5, 1e1, "magenta", {x:0, y:200}, {x:-0, y:0}),
-//     new Planet("2", 5, 1e1, "lime", {x:-200, y:0}, {x:0, y:-0}),
-//     new Planet("3", 5, 1e1, "yellow", {x:0, y:-200}, {x:0, y:0}),
-//     new Planet("4", 5, 1e1, "cyan", {x:200, y:0}, {x:0, y:0}),
+// let planets = [ //earth moon type system
+//     new Planet("earth", 12, 6e25, "white", {x:0, y:0}, {x:0, y:0}),
+//     new Planet("moon", 3, 7e22, "white", {x:90, y:0}, {x:0, y:3.5e-1})
 // ]
+
+let planets = [ //two body simulatneous orbit
+    new Planet("no", 10, 5e15, "white", {x:300, y:100}, {x:0, y:-2e-1}),
+    new Planet("homo", 10, 5e15, "white", {x:-300, y:-100}, {x:0, y:2e-1}),
+]
 
 const operations = {
     displacement: function(planet1, planet2) { //displacement FROM planet1 TO planet 2, returned as object with x, y, magnitude, angle properties in METRES and RADIANS
