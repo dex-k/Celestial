@@ -12,9 +12,9 @@ let center = {
 const celestialConstant = 1/*2e-12*/ //multiplicative constant to edit the value of G to be more usable.
 const G = 6.6740e-11 * celestialConstant;
 let tickrate = 16;
-let forceTime = 1e-3;
+let forceTime = 6e-5 /*1e-3/0.06*/;
 
-const system = {
+const sys = {
     paused: false,
     colours: false,
     wallBounce: false, //add later to make it bounce like the dvd logo lmao
@@ -102,16 +102,16 @@ const Planet = function(name, radius, mass, colour, pos, vel) {
 
 
 // let planets = [ //earth moon type system
-//     new Planet("earth", 12, 6e25, "white", {x:0, y:0}, {x:0, y:0}),
-//     new Planet("moon", 3, 7e22, "white", {x:90, y:0}, {x:0, y:3.5e-1})
+//     new Planet("earth", 12, 5e15, "white", {x:0, y:0}, {x:0, y:0}),
+//     new Planet("moon", 3, 7e9, "white", {x:190, y:0}, {x:0, y:5.5})
 // ]
 
 let planets = [ //two body simulatneous orbit
-    new Planet("no", 10, 5e15, "white", {x:300, y:100}, {x:0, y:-2e-1}),
-    new Planet("homo", 10, 5e15, "white", {x:-300, y:-100}, {x:0, y:2e-1}),
+    new Planet("no", 10, 6e16, "white", {x:300, y:100}, {x:-2e-2, y:-2.5e-1}),
+    new Planet("homo", 10, 6e16, "white", {x:-300, y:-100}, {x:2e-2, y:2.5e-1}),
 ]
 
-const operations = {
+const ops = {
     displacement: function(planet1, planet2) { //displacement FROM planet1 TO planet 2, returned as object with x, y, magnitude, angle properties in METRES and RADIANS
         let x = planet2.pos.x - planet1.pos.x,
             y = planet2.pos.y - planet1.pos.y,
@@ -163,8 +163,8 @@ const harderDaddy = function(){ //force of gravity pulling on each planet
         for (let j = 0; j < planets.length; j++){
             if (planets[j] == p1) continue;
             let p2 = planets[j];
-            let displacement = operations.displacement(p1, p2);
-            let force = operations.gravitationalForce(p2, p1);
+            let displacement = ops.displacement(p1, p2);
+            let force = ops.gravitationalForce(p2, p1);
             let a = force / p1.mass; //acceleration
             let t = forceTime; //time change is taking place over
             let ax = a * Math.cos(displacement.angle);
@@ -182,7 +182,7 @@ const harderDaddy = function(){ //force of gravity pulling on each planet
 
 
 const tick = function() {
-    if (!system.paused){
+    if (!sys.paused){
         nyoom();
         harderDaddy();
         window.setTimeout(tick, tickrate) // better than setinterval because allows for changing of interval
