@@ -19,12 +19,13 @@ const normalConstant = normal/Math.log10(normal) //constant which will multiply 
 
 const G = 6.6740e-11 /* celestialConstant;*/
 let tickrate = 16; //milliseconds between each update. 60fps ~= 16.666.. ms per frame
-let forceTime = 6e-5; //seconds over which acceleration is calculated
+let forceTime = 5e-5; //seconds over which acceleration is calculated
+const defaultColour = "white";
 
 const sys = {
     paused: false,
     colours: false,
-    wallBounce: false, //add later to make it bounce like the dvd logo lmao
+    wallBounce: true, //add later to make it bounce like the dvd logo lmao
     help: function() { //console log a guide
         //how to add, remove planets
         //how to pause/resume
@@ -110,13 +111,22 @@ const Planet = function(name, radius, mass, colour, pos, vel) {
 
 
 // let planets = [ //earth moon type system
-//     new Planet("earth", 10, 5e17, "white", {x:0, y:0}, {x:0, y:0}),
-//     new Planet("moon", 3, 7e9, "white", {x:190, y:0}, {x:0, y:1.4})
+//     new Planet("earth", 10, 5e17, defaultColour, {x:0, y:0}, {x:0, y:0}),
+//     new Planet("moon", 3, 7e9, defaultColour, {x:190, y:0}, {x:0, y:1.4})
 // ]
 
-let planets = [ //two body simulatneous orbit
-    new Planet("no", 10, 6e16, "white", {x:300, y:100}, {x:-2e-2, y:-2.5e-1}),
-    new Planet("homo", 10, 6e16, "white", {x:-300, y:-100}, {x:2e-2, y:2.5e-1}),
+// let planets = [ //two body simulatneous orbit
+//     new Planet("no", 5, 6e16, defaultColour, {x:300, y:100}, {x:-2e-2, y:-2.5e-1}),
+//     new Planet("homo", 5, 6e16, defaultColour, {x:-300, y:-100}, {x:2e-2, y:2.5e-1}),
+// ]
+
+let planets = [ //double binary
+    new Planet("jekyll", 8, 30e15, defaultColour, {x:10,y:10}, {x:-1,y:1}),
+    new Planet("hyde", 8, 30e15, defaultColour, {x:-10,y:-10}, {x:1,y:-1}),
+    new Planet("yin", 4, 8e8, defaultColour, {x:55,y:55}, {x:1,y:-1}),
+    new Planet("yang", 4, 8e8, defaultColour, {x:-55,y:-55}, {x:-1,y:1}),
+    new Planet("alpha", 4, 9e14, defaultColour, {x: 0, y: 300}, {x:-1.5,y:0}),
+    // new Planet("omega", 2, 2e2, defaultColour, {x: -10, y: 290}, {x:-1.6,y:0.1})
 ]
 
 const ops = {
@@ -168,21 +178,64 @@ const nyoom = function(){
 //TODO
 // - Add collision detection.
 //    * on collision, add radius and mass to form 1 body
+const combinePlanets = function(index1, index2) {
+    const p1 = planets[index1]; 
+    const p2 = planets[index2]; 
+    planets.splice(index2, 1)
+    planets.splice(index1,1)
+    // console.log(p1, p2)
+    const nameSum = p1.name + ' + ' + p2.name;
+    const radiiSum = p1.radius + p2.radius;
+    const massSum = p1.mass + p2.mass;
+    const avgPosition = {
+        x: (p1.pos.x + p2.pos.x) / 2 ,
+        y: (p1.pos.y + p2.pos.y) / 2 ,
+    };
+    const momentumSum = {
+        x: p1.vel.x * p1.mass + p2.vel.x * p2.mass ,
+        y: p1.vel.y * p1.mass + p2.vel.y * p2.mass,
+    }
+    const velocitySum = {
+        x: momentumSum.x / massSum,
+        y: momentumSum.y / massSum,
+    };
 
+    const newPlanet = new Planet(nameSum, radiiSum, massSum, defaultColour, avgPosition, velocitySum);
+
+    planets.push(newPlanet);
+}
 const collision = function() {
     for (let i = 0; i < planets.length; i++){
-        let p1 = planets[i];
-        let xFullDisplacement = Math.abs(p1.pos.x) + p1.radius;
-        let yFullDisplacement = Math.abs(p1.pos.y) + p1.radius;
 
-        if ( xFullDisplacement >= canvas.width / 2 ) { //if planet touches vert walls
-            p1.vel.x *= -1;
-        } else if ( yFullDisplacement >= canvas.height / 2 ) { //if planet touches horizontal walls
-            p1.vel.y *= -1;
+        let p1 = planets[i];
+        // console.log(p1)
+        if (sys.wallBounce) {
+
+            let xFullDisplacement = Math.abs(p1.pos.x) + p1.radius;
+            let yFullDisplacement = Math.abs(p1.pos.y) + p1.radius;
+    
+            if ( xFullDisplacement >= canvas.width / 2 ) { //if planet touches vert walls
+                p1.vel.x *= -0.95
+                p1.vel.y *= 0.95;
+            } else if ( yFullDisplacement >= canvas.height / 2 ) { //if planet touches horizontal walls
+                p1.vel.y *= -0.95;
+                p1.vel.x *= 0.95;
+            }
+
         }
         for (let j = 0; j < planets.length; j++){
+
             if (planets[j] == p1) continue; //skip if p1 = p2, more robust check than i===j in case [planets] is changed
+            
             let p2 = planets[j];
+
+            let separation = ops.displacement(p1, p2).magnitude;
+            let radiiSum = p1.radius + p2.radius;
+
+            if ( separation < radiiSum ) {
+                combinePlanets(i, j) //i and j are the indexes of p1 and p2 in [planets]
+            }
+
        }
     }
 }
